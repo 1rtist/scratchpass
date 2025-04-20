@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scratch to Reveal</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #ffffff;
+    }
+    #scratch-container {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      height: 100px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    #scratch-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      border-radius: 10px;
+      z-index: 2;
+      transition: opacity 0.5s ease;
+    }
+    #reveal-text {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #111;
+      font-size: 18px;
+      letter-spacing: 2px;
+      z-index: 1;
+      position: absolute;
+      top: 0;
+      left: 0;
+      text-align: center;
+      padding: 0 10px;
+    }
+    .shine-effect {
+      animation: shine 1s ease-in-out 1;
+    }
+    @keyframes shine {
+      0% {
+        box-shadow: 0 0 0px #0f0;
+      }
+      50% {
+        box-shadow: 0 0 20px #0f0;
+      }
+      100% {
+        box-shadow: 0 0 0px #0f0;
+      }
+    }
+    .back-button {
+      margin-top: 20px;
+      background-color: #222;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .back-button:hover {
+      background-color: #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>Scratch to Reveal Your Password</h1>
+  <div id="scratch-container">
+    <div id="reveal-text">PASSWORD: redblackwhitegreen</div>
+    <canvas id="scratch-canvas"></canvas>
+  </div>
+  <a href="https://scaresociety.org" class="back-button">Back to Main Site</a>
+
+  <script>
+    const canvas = document.getElementById('scratch-canvas');
+    const ctx = canvas.getContext('2d');
+    const revealText = document.getElementById('reveal-text');
+    let isDrawing = false;
+
+    function resizeCanvas() {
+      const container = document.getElementById('scratch-container');
+      canvas.width = container.offsetWidth;
+      canvas.height = container.offsetHeight;
+      ctx.fillStyle = '#888';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('load', resizeCanvas);
+
+    function getPosition(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      return { x, y };
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const { x, y } = getPosition(e);
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(x, y, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.closePath();
+      checkReveal();
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      draw(e);
+    });
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('mouseleave', () => isDrawing = false);
+    canvas.addEventListener('mousemove', draw);
+
+    canvas.addEventListener('touchstart', (e) => {
+      isDrawing = true;
+      draw(e);
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => isDrawing = false);
+    canvas.addEventListener('touchcancel', () => isDrawing = false);
+    canvas.addEventListener('touchmove', draw, { passive: false });
+
+    function checkReveal() {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let cleared = 0;
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        if (imageData.data[i + 3] < 128) cleared++;
+      }
+      const percent = cleared / (canvas.width * canvas.height) * 100;
+      if (percent > 60) {
+        canvas.style.opacity = 0;
+        setTimeout(() => {
+          canvas.style.display = 'none';
+          revealText.classList.add('shine-effect');
+        }, 500);
+      }
+    }
+  </script>
+</body>
+</html>
